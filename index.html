@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia de Higiene de Manos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .correct {
+            background-color: #4ade80 !important;
+            color: white !important;
+        }
+        .incorrect {
+            background-color: #f87171 !important;
+            color: white !important;
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<!-- Pantalla de inicio -->
+<div id="pantalla-inicial" class="min-h-screen flex flex-col justify-center items-center bg-white fixed top-0 left-0 w-full h-full z-50">
+  <div class="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
+    <h2 class="text-2xl font-bold mb-4 text-center text-indigo-800">Registro de Participante</h2>
+    <form id="formRegistro" class="space-y-4">
+      <input type="text" id="nombre" placeholder="Nombre y Apellido" required class="w-full px-4 py-2 border rounded-lg" />
+      <input type="text" id="servicio" placeholder="Servicio" required class="w-full px-4 py-2 border rounded-lg" />
+      <input type="text" id="hospital" placeholder="Hospital" required class="w-full px-4 py-2 border rounded-lg" />
+      <input type="date" id="fecha" required class="w-full px-4 py-2 border rounded-lg" />
+      <input type="email" id="email" placeholder="Email" required class="w-full px-4 py-2 border rounded-lg" />
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white w-full py-2 px-4 rounded-lg font-semibold">
+        Comenzar Trivia
+      </button>
+    </form>
+  </div>
+</div>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-800 mb-2">Trivia de Higiene de Manos</h1>
+            <p class="text-lg text-indigo-600">Test your knowledge about hand hygiene protocols</p>
+            <div class="w-full bg-gray-200 rounded-full h-4 mt-4">
+                <div id="progress-bar" class="progress-bar bg-indigo-600 h-4 rounded-full" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between mt-2">
+                <span id="progress-text" class="text-sm font-medium text-indigo-700">0/0</span>
+                <span id="score" class="text-sm font-medium text-indigo-700">Score: 0</span>
+            </div>
+        </header>
+
+        <!-- Game Area -->
+        <div id="game-area" class="bg-white rounded-xl shadow-xl p-6 mb-8">
+            <div id="question-container" class="text-center">
+                <h2 id="question" class="text-2xl font-semibold text-gray-800 mb-6"></h2>
+                <div id="options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+            
+            <div id="result-container" class="hidden text-center py-8">
+                <i id="result-icon" class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                <h3 id="result-text" class="text-2xl font-bold mb-4">¡Correcto!</h3>
+                <p id="explanation" class="text-gray-600 mb-6"></p>
+                <button id="next-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition duration-300">
+                    Siguiente Pregunta <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="final-results" class="hidden bg-white rounded-xl shadow-xl p-8 text-center">
+            <i class="fas fa-trophy text-6xl text-yellow-500 mb-6"></i>
+            <h2 class="text-3xl font-bold text-indigo-800 mb-4">¡Trivia Completada!</h2>
+            <p id="final-score" class="text-2xl mb-6">Tu puntaje final: <span class="font-bold">0</span>/0</p>
+            <p id="performance-text" class="text-lg text-gray-600 mb-8"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="restart-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition duration-300">
+                    <i class="fas fa-redo mr-2"></i> Jugar de nuevo
+                </button>
+                <button id="share-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full transition duration-300">
+                    <i class="fas fa-share-alt mr-2"></i> Compartir
+                </button>
+                <button id="pdf-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full transition duration-300">
+  <i class="fas fa-file-download mr-2"></i> Descargar Certificado
+</button>
+<!-- Contenido invisible para generar el certificado -->
+<div id="certificado" class="hidden p-10 font-sans text-gray-800 bg-white w-[21cm] h-[29.7cm]">
+  <h1 class="text-3xl font-bold text-center mb-8">Certificado de Participación</h1>
+  <p class="mb-4">Se certifica que <strong id="cert-nombre"></strong></p>
+  <p class="mb-4">del servicio <strong id="cert-servicio"></strong> del Hospital <strong id="cert-hospital"></strong></p>
+  <p class="mb-4">ha completado la <strong>Trivia Educativa de Higiene de Manos</strong></p>
+  <p class="mb-4">con fecha <strong id="cert-fecha"></strong> y ha obtenido un puntaje de <strong id="cert-puntaje"></strong>.</p>
+  <p class="mt-10">Firma: _____________________________________</p>
+</div>
+
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-500 text-sm mt-8">
+            <p>Trivia educativa sobre higiene de manos para profesionales de la salud</p>
+        </footer>
+    </div>
+
+    <script>
+        
+  const datosJugador = {};
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha').value = hoy;
+
+    document.getElementById("formRegistro").addEventListener("submit", function (e) {
+      e.preventDefault();
+      // Guardar datos
+      datosJugador.nombre = document.getElementById("nombre").value;
+      datosJugador.servicio = document.getElementById("servicio").value;
+      datosJugador.hospital = document.getElementById("hospital").value;
+      datosJugador.fecha = document.getElementById("fecha").value;
+      datosJugador.email = document.getElementById("email").value;
+
+      // Ocultar pantalla inicial y mostrar trivia
+      document.getElementById("pantalla-inicial").classList.add("hidden");
+      document.querySelector(".container").classList.remove("hidden");
+      initGame();
+    });
+  });
+
+        // Game data
+        const questions = [
+            {
+                question: "¿Cuál es el objetivo principal de la higiene de manos?",
+                options: [
+                    { text: "Eliminar la suciedad visible", correct: false },
+                    { text: "Reducir la transmisión de microorganismos", correct: true },
+                    { text: "Refrescar las manos", correct: false }
+                ],
+                explanation: "El objetivo principal es reducir la transmisión de microorganismos, aunque también elimina la suciedad visible."
+            },
+            {
+                question: "¿Cuándo debe realizarse la higiene de manos con agua y jabón?",
+                options: [
+                    { text: "Solo al iniciar el turno", correct: false },
+                    { text: "Cuando las manos estén visiblemente sucias", correct: true },
+                    { text: "Después de ponerse guantes", correct: false }
+                ],
+                explanation: "El lavado con agua y jabón es necesario cuando hay suciedad visible, sangre u otros fluidos corporales."
+            },
+            {
+                question: "¿Qué técnica se recomienda cuando no hay suciedad visible en las manos?",
+                options: [
+                    { text: "Fricción con solución Hidroalcohólica", correct: true },
+                    { text: "Lavado con agua oxigenada", correct: false },
+                    { text: "Uso de toallas húmedas", correct: false }
+                ],
+                explanation: "La fricción con solución alcohólica es más rápida y efectiva cuando no hay suciedad visible."
+            },
+            {
+                question: "¿Qué cantidad de solución hidroalcohólica se debe utilizar?",
+                options: [
+                    { text: "Unas gotas", correct: false },
+                    { text: "La cantidad suficiente para cubrir completamente todas las superficies de las manos", correct: true },
+                    { text: "Más de 10 ml", correct: false }
+                ],
+                explanation: "Se recomienda usar 3-5 ml o la cantidad suficiente para cubrir completamente todas las superficies de las manos."
+            },
+            {
+                question: "¿Cuánto tiempo debe durar la fricción con solución alcohólica?",
+                options: [
+                    { text: "10 segundos", correct: false },
+                    { text: "20-30 segundos", correct: true },
+                    { text: "1 minuto", correct: false }
+                ],
+                explanation: "El tiempo óptimo es de 20-30 segundos para asegurar la cobertura completa y la eliminación de microorganismos."
+            },
+            {
+                question: "¿Qué debe hacerse antes de colocarse guantes?",
+                options: [
+                    { text: "Mojarse las manos", correct: false },
+                    { text: "Realizar higiene de manos", correct: true },
+                    { text: "Usar alcohol en gel sobre los guantes", correct: false }
+                ],
+                explanation: "Siempre se debe realizar higiene de manos antes de colocarse guantes para evitar contaminación."
+            },
+            {
+                question: "¿Cuál es una de las 5 indicaciones principales de la OMS para la higiene de manos?",
+                options: [
+                    { text: "Al contestar el teléfono", correct: false },
+                    { text: "Antes del contacto con el paciente", correct: true },
+                    { text: "Después de tomar agua", correct: false }
+                ],
+                explanation: "Las 5 indicaciones de la OMS incluyen: antes de tocar al paciente, antes de procedimientos limpios/asépticos, después del riesgo de exposición a fluidos corporales, después de tocar al paciente y después del contacto con el entorno del paciente."
+            },
+            {
+                question: "¿Qué tipo de jabón se recomienda para el lavado de manos clínico?",
+                options: [
+                    { text: "Jabón perfumado", correct: false },
+                    { text: "Jabón líquido neuto", correct: true },
+                    { text: "Jabón sólido", correct: false }
+                ],
+                explanation: "Se recomienda jabón líquido neutro porque los jabones sólidos pueden contaminarse y los perfumados pueden causar irritación."
+            },
+            {
+                question: "¿Qué acción NO es necesaria en la higiene de manos?",
+                options: [
+                    { text: "Usar guantes siempre", correct: true },
+                    { text: "Secar bien las manos", correct: false },
+                    { text: "Frotar entre los dedos", correct: false }
+                ],
+                explanation: "El uso de guantes no reemplaza la higiene de manos y no siempre es necesario."
+            },
+            {
+                question: "¿Por qué es importante secarse bien las manos?",
+                options: [
+                    { text: "Para evitar la humedad", correct: false },
+                    { text: "Para que no se enfríen", correct: false },
+                    { text: "Porque la humedad favorece el crecimiento de microorganismos y evita las lesiones en la piel", correct: true }
+                ],
+                explanation: "Las manos húmedas pueden transferir microorganismos más fácilmente, favorecen su crecimiento y lesiones en la piel."
+            },
+            {
+                question: "¿Cuándo debe realizarse la higiene de manos después del contacto con el entorno del paciente?",
+                options: [
+                    { text: "Siempre", correct: true },
+                    { text: "Solo si se tocó su cama", correct: false },
+                    { text: "Solo si hay secreciones", correct: false }
+                ],
+                explanation: "El entorno del paciente puede estar contaminado, por lo que siempre se debe realizar higiene de manos después del contacto."
+            },
+            {
+                question: "¿Qué tipo de toalla debe usarse para secar las manos?",
+                options: [
+                    { text: "Papel descartable", correct: true },
+                    { text: "Toalla de tela compartida", correct: false },
+                    { text: "Aire caliente", correct: false }
+                ],
+                explanation: "El papel descartable es el método más higiénico para secar las manos."
+            },
+            {
+                question: "¿Qué pasa si se utilizan anillos o pulseras durante la atención sanitaria?",
+                options: [
+                    { text: "No influye", correct: false },
+                    { text: "Favorecen la colonización microbiana", correct: true },
+                    { text: "Mejoran la higiene", correct: false }
+                ],
+                explanation: "Las joyas pueden albergar microorganismos e interferir con la higiene adecuada de las manos."
+            },
+            {
+                question: "¿Qué se recomienda respecto a las uñas?",
+                options: [
+                    { text: "Cortas y sin esmalte", correct: true },
+                    { text: "Largas y cuidadas", correct: false },
+                    { text: "Pintadas pero limpias", correct: false }
+                ],
+                explanation: "Las uñas deben mantenerse cortas y sin esmalte porque las uñas largas y el esmalte pueden albergar microorganismos."
+            },
+            {
+                question: "¿La higiene de manos reemplaza el uso de guantes?",
+                options: [
+                    { text: "Sí", correct: false },
+                    { text: "Depende del paciente", correct: false },
+                    { text: "No", correct: true }
+                ],
+                explanation: "La higiene de manos y el uso de guantes son medidas complementarias, no sustitutivas."
+            },
+            {
+                question: "¿Cuál es la principal vía de transmisión de infecciones asociadas al cuidado de la salud?",
+                options: [
+                    { text: "Aire", correct: false },
+                    { text: "Manos del personal de salud", correct: true },
+                    { text: "Instrumental contaminado", correct: false }
+                ],
+                explanation: "Las manos del personal de salud son la principal vía de transmisión de infecciones nosocomiales."
+            },
+            {
+                question: "¿Qué se debe hacer si se sospecha contacto con materia orgánica?",
+                options: [
+                    { text: "Lavado de manos con agua y jabón", correct: true },
+                    { text: "Usar colonia", correct: false },
+                    { text: "Frotar alcohol sin lavar", correct: false }
+                ],
+                explanation: "Cuando hay materia orgánica visible, el alcohol no es suficiente y se debe realizar lavado con agua y jabón."
+            },
+            {
+                question: "¿Qué debe evitarse al usar solución hidroalcohólica?",
+                options: [
+                    { text: "Colocación en exceso", correct: false },
+                    { text: "Aplicar sobre manos mojadas", correct: true },
+                    { text: "Colocación en zonas irritadas de la piel", correct: false }
+                ],
+                explanation: "La solución hidroalcohólica debe aplicarse sobre manos secas, ya que el agua diluye el alcohol y reduce su eficacia."
+            },
+            {
+                question: "¿Qué parte de las manos suele olvidarse al frotar?",
+                options: [
+                    { text: "Palma", correct: false },
+                    { text: "Pulgares y espacios interdigitales", correct: true },
+                    { text: "Muñeca", correct: false }
+                ],
+                explanation: "Los pulgares y los espacios entre los dedos son áreas que frecuentemente se pasan por alto durante la higiene de manos."
+            },
+            {
+                question: "¿Cuál es un beneficio comprobado de la higiene de manos?",
+                options: [
+                    { text: "Reducción de infecciones hospitalarias", correct: true },
+                    { text: "Mejora del clima laboral", correct: false },
+                    { text: "Mayor uso de guantes", correct: false }
+                ],
+                explanation: "Numerosos estudios demuestran que la higiene adecuada de manos reduce significativamente las infecciones asociadas a la atención sanitaria."
+            }
+        ];
+
+        // Game state
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+
+        // DOM elements
+        const questionElement = document.getElementById('question');
+        const optionsElement = document.getElementById('options');
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const resultIcon = document.getElementById('result-icon');
+        const explanationElement = document.getElementById('explanation');
+        const nextButton = document.getElementById('next-btn');
+        const finalResults = document.getElementById('final-results');
+        const finalScoreElement = document.getElementById('final-score');
+        const performanceText = document.getElementById('performance-text');
+        const restartButton = document.getElementById('restart-btn');
+        const shareButton = document.getElementById('share-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const scoreElement = document.getElementById('score');
+        const gameArea = document.getElementById('game-area');
+
+        // Initialize the game
+        function initGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            showQuestion();
+        }
+
+        // Show current question
+        function showQuestion() {
+            const question = questions[currentQuestionIndex];
+            questionElement.textContent = question.question;
+            optionsElement.innerHTML = '';
+            
+            // Update progress
+            progressBar.style.width = `${(currentQuestionIndex / questions.length) * 100}%`;
+            progressText.textContent = `${currentQuestionIndex + 1}/${questions.length}`;
+            
+            // Create options
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('button');
+                optionElement.className = 'option bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-medium py-4 px-6 rounded-lg transition duration-300 text-left flex items-center';
+                optionElement.innerHTML = `
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-indigo-500 flex items-center justify-center mr-3">
+                        <span class="text-xs font-bold">${String.fromCharCode(65 + index)}</span>
+                    </span>
+                    ${option.text}
+                `;
+                optionElement.addEventListener('click', () => selectOption(index));
+                optionsElement.appendChild(optionElement);
+            });
+            
+            // Hide result container and show question
+            resultContainer.classList.add('hidden');
+            questionElement.parentElement.classList.remove('hidden');
+        }
+
+        // Handle option selection
+        function selectOption(index) {
+            const question = questions[currentQuestionIndex];
+            const options = document.querySelectorAll('.option');
+            
+            // Disable all options
+            options.forEach(option => {
+                option.removeEventListener('click', selectOption);
+                option.classList.remove('hover:bg-indigo-200');
+            });
+            
+            // Mark selected option
+            selectedOption = index;
+            options[index].classList.add('bg-indigo-300');
+            
+            // Check if correct
+            const isCorrect = question.options[index].correct;
+            
+            // Show result
+            setTimeout(() => {
+                if (isCorrect) {
+                    score++;
+                    updateScore();
+                    options[index].classList.add('correct');
+                    resultText.textContent = '¡Correcto!';
+                    resultIcon.className = 'fas fa-check-circle text-6xl mb-4 text-green-500 pulse';
+                } else {
+                    options[index].classList.add('incorrect');
+                    resultText.textContent = 'Incorrecto';
+                    resultIcon.className = 'fas fa-times-circle text-6xl mb-4 text-red-500 pulse';
+                    
+                    // Highlight correct answer
+                    const correctIndex = question.options.findIndex(opt => opt.correct);
+                    options[correctIndex].classList.add('correct');
+                }
+                
+                // Show explanation
+                explanationElement.textContent = question.explanation;
+                
+                // Show result container
+                questionElement.parentElement.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+            }, 500);
+        }
+
+        // Update score display
+        function updateScore() {
+            scoreElement.textContent = `Score: ${score}`;
+        }
+
+        // Go to next question
+        function nextQuestion() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showFinalResults();
+            }
+        }
+
+        // Show final results
+        function showFinalResults() {
+            const percentage = Math.round((score / questions.length) * 100);
+            
+            finalScoreElement.innerHTML = `
+  <p class="mb-2">Participante: <strong>${datosJugador.nombre}</strong></p>
+  <p class="mb-2">Servicio: <strong>${datosJugador.servicio}</strong> - Hospital: <strong>${datosJugador.hospital}</strong></p>
+  <p class="mb-2">Fecha: <strong>${datosJugador.fecha}</strong></p>
+  <p class="mb-2">Correo: <strong>${datosJugador.email}</strong></p>
+  <p class="text-xl mt-4">Tu puntaje final: <span class="font-bold">${score}</span>/${questions.length}</p>
+`;
+
+            
+            if (percentage >= 90) {
+                performanceText.textContent = '¡Excelente! Eres un experto en higiene de manos.';
+                performanceText.className = 'text-lg text-green-600 mb-8';
+            } else if (percentage >= 70) {
+                performanceText.textContent = '¡Buen trabajo! Tienes un buen conocimiento sobre higiene de manos.';
+                performanceText.className = 'text-lg text-blue-600 mb-8';
+            } else if (percentage >= 50) {
+                performanceText.textContent = 'No está mal, pero hay margen para mejorar tus conocimientos.';
+                performanceText.className = 'text-lg text-yellow-600 mb-8';
+            } else {
+                performanceText.textContent = 'Considera repasar los protocolos de higiene de manos.';
+                performanceText.className = 'text-lg text-red-600 mb-8';
+            }
+            
+            gameArea.classList.add('hidden');
+            finalResults.classList.remove('hidden');
+        }
+
+        // Share results
+        function shareResults() {
+            const shareText = `Acabo de completar la Trivia de Higiene de Manos con un puntaje de ${score}/${questions.length}! ¿Puedes superarme?`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Trivia de Higiene de Manos',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(() => {
+                    // Fallback for when share is cancelled
+                    copyToClipboard(shareText + ' ' + window.location.href);
+                    alert('¡Enlace copiado al portapapeles! Compártelo donde quieras.');
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                copyToClipboard(shareText + ' ' + window.location.href);
+                alert('¡Enlace copiado al portapapeles! Compártelo donde quieras.');
+            }
+        }
+
+        // Copy text to clipboard
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        // Event listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', () => {
+            finalResults.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            initGame();
+            document.getElementById('pdf-btn').addEventListener('click', () => {
+  // Insertar datos al certificado
+  document.getElementById('cert-nombre').textContent = datosJugador.nombre;
+  document.getElementById('cert-servicio').textContent = datosJugador.servicio;
+  document.getElementById('cert-hospital').textContent = datosJugador.hospital;
+  document.getElementById('cert-fecha').textContent = datosJugador.fecha;
+  document.getElementById('cert-puntaje').textContent = `${score}/${questions.length}`;
+
+  // Mostrar div temporalmente para generar PDF
+  const certDiv = document.getElementById('certificado');
+  certDiv.classList.remove('hidden');
+
+  html2pdf()
+    .set({
+      margin: 1,
+      filename: `certificado_${datosJugador.nombre.replace(/\s/g, "_")}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    })
+    .from(certDiv)
+    .save()
+    .then(() => {
+      certDiv.classList.add('hidden'); // Ocultar nuevamente
+    });
+});
+
+        });
+        shareButton.addEventListener('click', shareResults);
+          pdfButton.addEventListener('click', () => {
+    document.getElementById('cert-nombre').textContent = datosJugador.nombre;
+    document.getElementById('cert-servicio').textContent = datosJugador.servicio;
+    document.getElementById('cert-hospital').textContent = datosJugador.hospital;
+    document.getElementById('cert-fecha').textContent = datosJugador.fecha;
+    document.getElementById('cert-puntaje').textContent = `${score}/${questions.length}`;
+    const certificado = document.getElementById('certificado');
+    certificado.style.display = 'block';
+    html2pdf().from(certificado).save(`certificado_${datosJugador.nombre}.pdf`).then(() => {
+      certificado.style.display = 'none';
+    });
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha').value = hoy;
+  });
+
+        // Start the game
+        initGame();
+        
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>
